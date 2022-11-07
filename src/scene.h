@@ -30,6 +30,7 @@ private:
     void OnUserCreated();
     void OnUserUpdated();
     void MultiplyMatrixVector(Vec3d &i, Vec3d &o, Mat4x4 &m);
+    QRgb GetColour(float lum);
 
     QTimer m_timer;
     QElapsedTimer m_elapsedTimer;
@@ -39,6 +40,7 @@ private:
 
     Mesh meshCube;
     Mat4x4 matProj;
+    Vec3d vCamera;
 
     float fTheta;
 
