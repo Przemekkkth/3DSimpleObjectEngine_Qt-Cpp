@@ -59,7 +59,7 @@ void Scene::OnUserCreated()
         { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f },
 
     };
-
+    //meshCube.LoadFromObjectFile(":/res/VideoShip.obj");
     // Projection Matrix
     float fNear = 0.1f;
     float fFar = 1000.0f;
@@ -120,9 +120,9 @@ void Scene::OnUserUpdated()
 
         // Offset into the screen
         triTranslated = triRotatedZX;
-        triTranslated.p[0].z = triRotatedZX.p[0].z + 3.0f;
-        triTranslated.p[1].z = triRotatedZX.p[1].z + 3.0f;
-        triTranslated.p[2].z = triRotatedZX.p[2].z + 3.0f;
+        triTranslated.p[0].z = triRotatedZX.p[0].z + 2.0f;
+        triTranslated.p[1].z = triRotatedZX.p[1].z + 2.0f;
+        triTranslated.p[2].z = triRotatedZX.p[2].z + 2.0f;
 
         // Use Cross-Product to get surface normal
         Vec3d normal, line1, line2;

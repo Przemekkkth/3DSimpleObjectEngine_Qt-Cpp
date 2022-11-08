@@ -16,3 +16,6 @@ HEADERS += \
     src/uitils/triangle.h \
     src/uitils/vec3d.h \
     src/view.h
+
+RESOURCES += \
+    resource.qrc
