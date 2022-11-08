@@ -13,6 +13,7 @@ Scene::Scene(QObject *parent)
     connect(&m_timer, &QTimer::timeout, this, &Scene::loop);
     m_timer.start(int(m_loopSpeed));
     m_elapsedTimer.start();
+    setBackgroundBrush(Qt::black);
 }
 
 
@@ -32,34 +33,34 @@ void Scene::loop()
 
 void Scene::OnUserCreated()
 {
-    meshCube.tris = {
+//    meshCube.tris = {
 
-        // SOUTH
-        { 0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f },
+//        // SOUTH
+//        { 0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f },
+//        { 0.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f },
 
-        // EAST
-        { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f },
-        { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f },
+//        // EAST
+//        { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f },
+//        { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f },
 
-        // NORTH
-        { 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f },
-        { 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f },
+//        // NORTH
+//        { 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f },
+//        { 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f },
 
-        // WEST
-        { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f },
-        { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f },
+//        // WEST
+//        { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f },
+//        { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f },
 
-        // TOP
-        { 0.0f, 1.0f, 0.0f,    0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f },
-        { 0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 0.0f },
+//        // TOP
+//        { 0.0f, 1.0f, 0.0f,    0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f },
+//        { 0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 0.0f },
 
-        // BOTTOM
-        { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f },
-        { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f },
+//        // BOTTOM
+//        { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f },
+//        { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f },
 
-    };
-    //meshCube.LoadFromObjectFile(":/res/VideoShip.obj");
+//    };
+    meshCube.LoadFromObjectFile(":/res/VideoShip.obj");
     // Projection Matrix
     float fNear = 0.1f;
     float fFar = 1000.0f;
@@ -120,9 +121,9 @@ void Scene::OnUserUpdated()
 
         // Offset into the screen
         triTranslated = triRotatedZX;
-        triTranslated.p[0].z = triRotatedZX.p[0].z + 2.0f;
-        triTranslated.p[1].z = triRotatedZX.p[1].z + 2.0f;
-        triTranslated.p[2].z = triRotatedZX.p[2].z + 2.0f;
+        triTranslated.p[0].z = triRotatedZX.p[0].z + 8.0f;
+        triTranslated.p[1].z = triRotatedZX.p[1].z + 8.0f;
+        triTranslated.p[2].z = triRotatedZX.p[2].z + 8.0f;
 
         // Use Cross-Product to get surface normal
         Vec3d normal, line1, line2;
@@ -179,14 +180,19 @@ void Scene::OnUserUpdated()
             vecTrianglesToRaster.push_back(triProjected);
         }
 
-        // Sort triangles from back to front
-        std::sort(vecTrianglesToRaster.begin(), vecTrianglesToRaster.end(), [](Triangle &t1, Triangle &t2)
-        {
-            float z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0f;
-            float z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0f;
-            return z1 > z2;
-        });
 
+    }
+
+    // Sort triangles from back to front
+    std::sort(vecTrianglesToRaster.begin(), vecTrianglesToRaster.end(), [](Triangle &t1, Triangle &t2)
+    {
+        float z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0f;
+        float z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0f;
+        return z1 > z2;
+    });
+
+    for (auto &triProjected : vecTrianglesToRaster)
+    {
         // Rasterize triangle
         QPainterPath path;
         path.moveTo(triProjected.p[0].x, triProjected.p[0].y);
@@ -198,9 +204,8 @@ void Scene::OnUserUpdated()
         pathItem->setPen(QPen(QBrush(triProjected.color), PIXEL_SIZE.width()));
         pathItem->setBrush(QBrush(triProjected.color));
         addItem(pathItem);
-
-
     }
+
 }
 
 void Scene::MultiplyMatrixVector(Vec3d &i, Vec3d &o, Mat4x4 &m)
@@ -219,6 +224,10 @@ void Scene::MultiplyMatrixVector(Vec3d &i, Vec3d &o, Mat4x4 &m)
 QRgb Scene::GetColour(float lum)
 {
     int pixel_bw = (int)(4.0f*lum);
+    if(pixel_bw < 0.0f)
+    {
+        pixel_bw *= -1;
+    }
     QRgb retVal;
     switch (pixel_bw)
     {

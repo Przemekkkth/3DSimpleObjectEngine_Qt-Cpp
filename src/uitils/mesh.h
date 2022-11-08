@@ -25,7 +25,7 @@ struct Mesh
         while (!stream.atEnd())
         {
             QString line = stream.readLine();
-            qDebug() << "line " << line;
+            //qDebug() << "line " << line;
             if(line[0] == 'v')
             {
                 Vec3d v;
