@@ -11,10 +11,11 @@ SOURCES += \
 
 HEADERS += \
     src/scene.h \
-    src/uitils/mat4x4.h \
-    src/uitils/mesh.h \
-    src/uitils/triangle.h \
-    src/uitils/vec3d.h \
+    src/utils/mat4x4.h \
+    src/utils/mesh.h \
+    src/utils/triangle.h \
+    src/utils/vec3d.h \
+    src/utils/vector.h \
     src/view.h
 
 RESOURCES += \
