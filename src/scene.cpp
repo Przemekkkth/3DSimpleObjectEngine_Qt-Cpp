@@ -3,6 +3,8 @@
 #include <QPainterPath>
 #include <QGraphicsPathItem>
 #include <QRgb>
+#include <QKeyEvent>
+#include <QGraphicsSceneMouseEvent>
 #include <algorithm>
 
 Scene::Scene(QObject *parent)
@@ -14,6 +16,11 @@ Scene::Scene(QObject *parent)
     m_timer.start(int(m_loopSpeed));
     m_elapsedTimer.start();
     setBackgroundBrush(Qt::black);
+    for(int i = 0; i < 256; ++i)
+    {
+        m_keys[i] = new KeyStatus();
+    }
+    m_mouse = new MouseStatus();
 }
 
 
@@ -23,11 +30,12 @@ void Scene::loop()
     m_elapsedTimer.restart();
 
     m_loopTime += m_deltaTime;
-    qDebug() << "loopTime" << m_loopTime;
     while( m_loopTime > m_loopSpeed)
     {
         m_loopTime -= m_loopSpeed;
         OnUserUpdated();
+
+        resetStatus();
     }
 }
 
@@ -260,4 +268,68 @@ QRgb Scene::GetColour(float lum)
     }
 
     return retVal;
+}
+
+void Scene::handlePlayerInput()
+{
+
+}
+
+void Scene::resetStatus()
+{
+    for(int i = 0; i < 256; ++i)
+    {
+        m_keys[i]->m_released = false;
+    }
+    m_mouse->m_released = false;
+}
+
+void Scene::keyPressEvent(QKeyEvent *event)
+{
+    if(KEYBOARD::KeysMapper.contains(event->key()))
+    {
+        if(event->isAutoRepeat())
+        {
+            m_keys[KEYBOARD::KeysMapper[event->key()]]->m_held = true;
+            m_keys[KEYBOARD::KeysMapper[event->key()]]->m_pressed = false;
+        }
+        else
+        {
+            m_keys[KEYBOARD::KeysMapper[event->key()]]->m_pressed = true;
+            m_keys[KEYBOARD::KeysMapper[event->key()]]->m_held    = false;
+        }
+    }
+    QGraphicsScene::keyPressEvent(event);
+}
+
+void Scene::keyReleaseEvent(QKeyEvent *event)
+{
+    if(KEYBOARD::KeysMapper.contains(event->key()))
+    {
+        if(!event->isAutoRepeat())
+        {
+            m_keys[KEYBOARD::KeysMapper[event->key()]]->m_held = false;
+            m_keys[KEYBOARD::KeysMapper[event->key()]]->m_pressed = false;
+            m_keys[KEYBOARD::KeysMapper[event->key()]]->m_released = true;
+        }
+
+    }
+    QGraphicsScene::keyReleaseEvent(event);
+}
+
+void Scene::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    m_mouse->m_x = event->scenePos().x();
+    m_mouse->m_y = event->scenePos().y();
+    m_mouse->m_pressed = true;
+    QGraphicsScene::mousePressEvent(event);
+}
+
+void Scene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+    m_mouse->m_x = event->scenePos().x();
+    m_mouse->m_y = event->scenePos().y();
+    m_mouse->m_pressed = false;
+    m_mouse->m_released = true;
+    QGraphicsScene::mouseReleaseEvent(event);
 }

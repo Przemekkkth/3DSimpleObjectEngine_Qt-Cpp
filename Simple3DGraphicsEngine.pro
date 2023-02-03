@@ -11,6 +11,7 @@ SOURCES += \
 
 HEADERS += \
     src/scene.h \
+    src/utils.h \
     src/utils/mat4x4.h \
     src/utils/matrix.h \
     src/utils/mesh.h \
