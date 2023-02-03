@@ -24,7 +24,7 @@ void Scene::loop()
 
     m_loopTime += m_deltaTime;
     qDebug() << "loopTime" << m_loopTime;
-    if( m_loopTime > m_loopSpeed)
+    while( m_loopTime > m_loopSpeed)
     {
         m_loopTime -= m_loopSpeed;
         OnUserUpdated();

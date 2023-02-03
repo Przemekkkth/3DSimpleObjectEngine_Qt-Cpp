@@ -5,10 +5,11 @@
 #include <QTimer>
 #include <QElapsedTimer>
 
-#include "uitils/mat4x4.h"
-#include "uitils/mesh.h"
-#include "uitils/triangle.h"
-#include "uitils/vec3d.h"
+#include "utils/mat4x4.h"
+#include "utils/mesh.h"
+#include "utils/triangle.h"
+#include "utils/vec3d.h"
+#include "utils/vector.h"
 
 class Scene : public QGraphicsScene
 {
