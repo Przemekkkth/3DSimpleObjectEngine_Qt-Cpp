@@ -64,8 +64,10 @@ private:
     Mesh meshCube;
     Mat4x4 matProj;
     Vec3d vCamera;
-
+    Vec3d vLookDir;
+    float fYaw;
     float fTheta;
+
 
 
     // QGraphicsScene interface

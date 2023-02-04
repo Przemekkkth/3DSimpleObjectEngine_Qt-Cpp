@@ -1,4 +1,5 @@
 #include "scene.h"
+#include "utils/matrix.h"
 #include <QDebug>
 #include <QPainterPath>
 #include <QGraphicsPathItem>
@@ -32,9 +33,10 @@ void Scene::loop()
     m_loopTime += m_deltaTime;
     while( m_loopTime > m_loopSpeed)
     {
-        m_loopTime -= m_loopSpeed;
+        handlePlayerInput();
         OnUserUpdated();
 
+        m_loopTime -= m_loopSpeed;
         resetStatus();
     }
 }
@@ -70,18 +72,7 @@ void Scene::OnUserCreated()
 //    };
     meshCube.LoadFromObjectFile(":/res/videoship.obj");
     // Projection Matrix
-    float fNear = 0.1f;
-    float fFar = 1000.0f;
-    float fFov = 90.0f;
-    float fAspectRatio = (float)SCREEN_SIZE.height() / (float)SCREEN_SIZE.width();
-    float fFovRad = 1.0f / tanf(fFov * 0.5f / 180.0f * 3.14159f);
-
-    matProj.m[0][0] = fAspectRatio * fFovRad;
-    matProj.m[1][1] = fFovRad;
-    matProj.m[2][2] = fFar / (fFar - fNear);
-    matProj.m[3][2] = (-fFar * fNear) / (fFar - fNear);
-    matProj.m[2][3] = 1.0f;
-    matProj.m[3][3] = 0.0f;
+    matProj = Matrix::MakeProjection(90.0f, (float)SCREEN_SIZE.height() / (float)SCREEN_SIZE.width(), 0.1f, 1000.0f);
 }
 
 void Scene::OnUserUpdated()
@@ -272,7 +263,43 @@ QRgb Scene::GetColour(float lum)
 
 void Scene::handlePlayerInput()
 {
+    float fElapsedTime = m_loopTime;
+    if(m_keys[KEYBOARD::KEY_UP]->m_held)
+    {
+        vCamera.y += 8.0f * fElapsedTime;
+    }
+    if(m_keys[KEYBOARD::KEY_DOWN]->m_held)
+    {
+        vCamera.y -= 8.0f * fElapsedTime;
+    }
+    if(m_keys[KEYBOARD::KEY_LEFT]->m_held)
+    {
+        vCamera.x -= 8.0f * fElapsedTime;
+    }
+    if(m_keys[KEYBOARD::KEY_RIGHT]->m_held)
+    {
+        vCamera.x += 8.0f * fElapsedTime;
+    }
 
+    Vec3d vForward = Vector::Mul(vLookDir, 8.0f * fElapsedTime);
+
+    // Standard FPS Control scheme, but turn instead of strafe
+    if(m_keys[KEYBOARD::KEY_W]->m_held)
+    {
+        vCamera = Vector::Add(vCamera, vForward);
+    }
+    if(m_keys[KEYBOARD::KEY_S]->m_held)
+    {
+        vCamera = Vector::Sub(vCamera, vForward);
+    }
+    if(m_keys[KEYBOARD::KEY_A]->m_held)
+    {
+        fYaw -= 2.0f * fElapsedTime;
+    }
+    if(m_keys[KEYBOARD::KEY_D]->m_held)
+    {
+        fYaw += 2.0f * fElapsedTime;
+    }
 }
 
 void Scene::resetStatus()
