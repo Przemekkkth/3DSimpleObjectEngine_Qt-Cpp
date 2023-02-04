@@ -34,11 +34,12 @@ class Scene : public QGraphicsScene
 public:
     explicit Scene(QObject *parent = nullptr);
 
-    QSize PIXEL_SIZE  = QSize(2,2);
+    QSize PIXEL_SIZE  = QSize(3,3);
     QSize WINDOW_SIZE = QSize(256, 240);
     QSize SCREEN_SIZE = QSize(PIXEL_SIZE.width()*WINDOW_SIZE.width(),
                               PIXEL_SIZE.height()*WINDOW_SIZE.height());
     const int FPS = 60;
+    void preapareScene(QString objFileName);
 signals:
 
 

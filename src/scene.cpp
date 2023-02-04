@@ -24,6 +24,14 @@ Scene::Scene(QObject *parent)
     m_mouse = new MouseStatus();
 }
 
+void Scene::preapareScene(QString objFileName)
+{
+   meshCube.LoadFromObjectFile(objFileName);
+   vCamera.x = 0.0f;
+   vCamera.y = 0.0f;
+   vCamera.z = 0.0f;
+}
+
 
 void Scene::loop()
 {
@@ -33,8 +41,11 @@ void Scene::loop()
     m_loopTime += m_deltaTime;
     while( m_loopTime > m_loopSpeed)
     {
-        handlePlayerInput();
-        OnUserUpdated();
+        if(meshCube.tris.size())
+        {
+            handlePlayerInput();
+            OnUserUpdated();
+        }
 
         m_loopTime -= m_loopSpeed;
         resetStatus();

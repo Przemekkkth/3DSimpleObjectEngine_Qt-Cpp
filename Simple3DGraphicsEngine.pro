@@ -6,10 +6,12 @@ CONFIG += c++11
 
 SOURCES += \
     src/main.cpp \
+    src/mainwindow.cpp \
     src/scene.cpp \
     src/view.cpp
 
 HEADERS += \
+    src/mainwindow.h \
     src/scene.h \
     src/utils.h \
     src/utils/mat4x4.h \

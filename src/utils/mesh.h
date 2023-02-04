@@ -21,6 +21,7 @@ struct Mesh
             return false;
         }
         // Local cache of verts
+        tris.clear();
         QVector<Vec3d> verts;
         while (!stream.atEnd())
         {

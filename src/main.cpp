@@ -1,11 +1,12 @@
 #include <QApplication>
-#include "view.h"
+#include "mainwindow.h"
 
 int main(int argc, char **argv)
 {
     QApplication a(argc, argv);
 
-    View v;
+    MainWindow v;
+    v.setWindowTitle("Simple 3D Objects Engine");
     v.show();
 
     return a.exec();
