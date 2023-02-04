@@ -43,44 +43,13 @@ void Scene::loop()
 
 void Scene::OnUserCreated()
 {
-//    meshCube.tris = {
-
-//        // SOUTH
-//        { 0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f },
-//        { 0.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f },
-
-//        // EAST
-//        { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f },
-//        { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f },
-
-//        // NORTH
-//        { 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f },
-//        { 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f },
-
-//        // WEST
-//        { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f },
-//        { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f },
-
-//        // TOP
-//        { 0.0f, 1.0f, 0.0f,    0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f },
-//        { 0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 0.0f },
-
-//        // BOTTOM
-//        { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f },
-//        { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f },
-
-//    };
     meshCube.LoadFromObjectFile(":/res/videoship.obj");
-    // Projection Matrix
     matProj = Matrix::MakeProjection(90.0f, (float)SCREEN_SIZE.height() / (float)SCREEN_SIZE.width(), 0.1f, 1000.0f);
 }
 
 void Scene::OnUserUpdated()
 {
-    // Set up "World Tranmsform" though not updating theta
-    // makes this a bit redundant
     Mat4x4 matRotZ, matRotX;
-    //fTheta += 1.0f * fElapsedTime; // Uncomment to spin me right round baby right round
     matRotZ = Matrix::MakeRotationZ(fTheta * 0.5f);
     matRotX = Matrix::MakeRotationX(fTheta);
 
@@ -88,11 +57,10 @@ void Scene::OnUserUpdated()
     matTrans = Matrix::MakeTranslation(0.0f, 0.0f, 5.0f);
 
     Mat4x4 matWorld;
-    matWorld = Matrix::MakeIdentity();	// Form World Matrix
-    matWorld = Matrix::MultiplyMatrix(matRotZ, matRotX); // Transform by rotation
-    matWorld = Matrix::MultiplyMatrix(matWorld, matTrans); // Transform by translation
+    matWorld = Matrix::MakeIdentity();
+    matWorld = Matrix::MultiplyMatrix(matRotZ, matRotX);
+    matWorld = Matrix::MultiplyMatrix(matWorld, matTrans);
 
-    // Create "Point At" Matrix for camera
     Vec3d vUp = { 0,1,0 };
     Vec3d vTarget = { 0,0,1 };
     Mat4x4 matCameraRot = Matrix::MakeRotationY(fYaw);
@@ -100,82 +68,58 @@ void Scene::OnUserUpdated()
     vTarget = Vector::Add(vCamera, vLookDir);
     Mat4x4 matCamera = Matrix::PointAt(vCamera, vTarget, vUp);
 
-    // Make view matrix from camera
     Mat4x4 matView = Matrix::QuickInverse(matCamera);
-    // Store triagles for rastering later
+
     QVector<Triangle> vecTrianglesToRaster;
 
-    // Clear Screen
     clear();
-    // Draw Triangles
     for (auto tri : meshCube.tris)
     {
         Triangle triProjected, triTransformed, triViewed;
-        // World Matrix Transform
         triTransformed.p[0] = Matrix::MultiplyVector(matWorld, tri.p[0]);
         triTransformed.p[1] = Matrix::MultiplyVector(matWorld, tri.p[1]);
         triTransformed.p[2] = Matrix::MultiplyVector(matWorld, tri.p[2]);
 
-        // Calculate triangle Normal
         Vec3d normal, line1, line2;
 
-        // Get lines either side of triangle
         line1 = Vector::Sub(triTransformed.p[1], triTransformed.p[0]);
         line2 = Vector::Sub(triTransformed.p[2], triTransformed.p[0]);
 
-        // Take cross product of lines to get normal to triangle surface
         normal = Vector::CrossProduct(line1, line2);
 
-        // You normally need to normalise a normal!
         normal = Vector::Normalise(normal);
 
-        // Get Ray from triangle to camera
         Vec3d vCameraRay = Vector::Sub(triTransformed.p[0], vCamera);
 
-        // If ray is aligned with normal, then triangle is visible
         if (Vector::DotProduct(normal, vCameraRay) < 0.0f)
         {
-            // Illumination
+
             Vec3d light_direction = { 0.0f, 1.0f, -1.0f };
             light_direction = Vector::Normalise(light_direction);
 
-            // How "aligned" are light direction and triangle surface normal?
             float dp = std::max(0.1f, Vector::DotProduct(light_direction, normal));
-            // Set color
             triTransformed.color = GetColour(dp);
 
-            // Convert World Space --> View Space
             triViewed.p[0] = Matrix::MultiplyVector(matView, triTransformed.p[0]);
             triViewed.p[1] = Matrix::MultiplyVector(matView, triTransformed.p[1]);
             triViewed.p[2] = Matrix::MultiplyVector(matView, triTransformed.p[2]);
             triViewed.color = GetColour(dp);
-            qDebug() << "dp " << dp;
 
-            // Clip Viewed Triangle against near plane, this could form two additional
-            // additional triangles.
             int nClippedTriangles = 0;
             Triangle clipped[2];
             nClippedTriangles = Triangle::ClipAgainstPlane({ 0.0f, 0.0f, 0.1f }, { 0.0f, 0.0f, 1.0f }, triViewed, clipped[0], clipped[1]);
 
-            // We may end up with multiple triangles form the clip, so project as
-            // required
             for (int n = 0; n < nClippedTriangles; n++)
             {
-                // Project triangles from 3D --> 2D
                 triProjected.p[0] = Matrix::MultiplyVector(matProj, clipped[n].p[0]);
                 triProjected.p[1] = Matrix::MultiplyVector(matProj, clipped[n].p[1]);
                 triProjected.p[2] = Matrix::MultiplyVector(matProj, clipped[n].p[2]);
                 triProjected.color = clipped[n].color;
 
-
-                // Scale into view, we moved the normalising into cartesian space
-                // out of the matrix.vector function from the previous videos, so
-                // do this manually
                 triProjected.p[0] = Vector::Div(triProjected.p[0], triProjected.p[0].w);
                 triProjected.p[1] = Vector::Div(triProjected.p[1], triProjected.p[1].w);
                 triProjected.p[2] = Vector::Div(triProjected.p[2], triProjected.p[2].w);
 
-                // X/Y are inverted so put them back
                 triProjected.p[0].x *= -1.0f;
                 triProjected.p[1].x *= -1.0f;
                 triProjected.p[2].x *= -1.0f;
@@ -183,7 +127,6 @@ void Scene::OnUserUpdated()
                 triProjected.p[1].y *= -1.0f;
                 triProjected.p[2].y *= -1.0f;
 
-                // Offset verts into visible normalised space
                 Vec3d vOffsetView = { 1,1,0 };
                 triProjected.p[0] = Vector::Add(triProjected.p[0], vOffsetView);
                 triProjected.p[1] = Vector::Add(triProjected.p[1], vOffsetView);
@@ -195,7 +138,6 @@ void Scene::OnUserUpdated()
                 triProjected.p[2].x *= 0.5f * (float)SCREEN_SIZE.width();
                 triProjected.p[2].y *= 0.5f * (float)SCREEN_SIZE.height();
 
-                // Store triangle for sorting
                 vecTrianglesToRaster.push_back(triProjected);
             }
 
@@ -204,7 +146,6 @@ void Scene::OnUserUpdated()
 
     }
 
-    // Sort triangles from back to front
     std::sort(vecTrianglesToRaster.begin(), vecTrianglesToRaster.end(), [](Triangle &t1, Triangle &t2)
     {
         float z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0f;
@@ -212,9 +153,55 @@ void Scene::OnUserUpdated()
         return z1 > z2;
     });
 
+    for (auto &triToRaster : vecTrianglesToRaster)
+    {
+        Triangle clipped[2];
+        std::list<Triangle> listTriangles;
+
+        listTriangles.push_back(triToRaster);
+        int nNewTriangles = 1;
+
+        for (int p = 0; p < 4; p++)
+        {
+            int nTrisToAdd = 0;
+            while (nNewTriangles > 0)
+            {
+                Triangle test = listTriangles.front();
+                listTriangles.pop_front();
+                nNewTriangles--;
+
+                switch (p)
+                {
+                case 0:	nTrisToAdd = Triangle::ClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, test, clipped[0], clipped[1]); break;
+                case 1:	nTrisToAdd = Triangle::ClipAgainstPlane({ 0.0f, (float)SCREEN_SIZE.height() - 1, 0.0f }, { 0.0f, -1.0f, 0.0f }, test, clipped[0], clipped[1]); break;
+                case 2:	nTrisToAdd = Triangle::ClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1]); break;
+                case 3:	nTrisToAdd = Triangle::ClipAgainstPlane({ (float)SCREEN_SIZE.width() - 1, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1]); break;
+                }
+
+                for (int w = 0; w < nTrisToAdd; w++)
+                    listTriangles.push_back(clipped[w]);
+            }
+            nNewTriangles = listTriangles.size();
+        }
+
+
+        for (auto &triProjected : listTriangles)
+        {
+            QPainterPath path;
+            path.moveTo(triProjected.p[0].x, triProjected.p[0].y);
+
+            path.lineTo(triProjected.p[1].x, triProjected.p[1].y);
+            path.lineTo(triProjected.p[2].x, triProjected.p[2].y);
+            path.lineTo(triProjected.p[0].x, triProjected.p[0].y);
+            QGraphicsPathItem* pathItem = new QGraphicsPathItem(path);
+            pathItem->setPen(QPen(QBrush(triProjected.color), PIXEL_SIZE.width()));
+            pathItem->setBrush(QBrush(triProjected.color));
+            addItem(pathItem);
+        }
+    }
+
     for (auto &triProjected : vecTrianglesToRaster)
     {
-        // Rasterize triangle
         QPainterPath path;
         path.moveTo(triProjected.p[0].x, triProjected.p[0].y);
 
@@ -276,7 +263,7 @@ QRgb Scene::GetColour(float lum)
         break;
     case 4:
     {
-        retVal = qRgb(237, 0, 0);
+        retVal = qRgb(230, 0, 0);
     }
         break;
     default:
@@ -296,7 +283,6 @@ void Scene::handlePlayerInput()
     if(m_keys[KEYBOARD::KEY_I]->m_held)
     {
         vCamera.y += 8.0f * fElapsedTime;
-        //qDebug() << "vCamera.y " << vCamera.y ;
     }
     if(m_keys[KEYBOARD::KEY_K]->m_held)
     {
@@ -313,11 +299,9 @@ void Scene::handlePlayerInput()
 
     Vec3d vForward = Vector::Mul(vLookDir, 8.0f * fElapsedTime);
 
-    // Standard FPS Control scheme, but turn instead of strafe
     if(m_keys[KEYBOARD::KEY_W]->m_held)
     {
         vCamera = Vector::Add(vCamera, vForward);
-        qDebug() << "W vCamera.x " << vCamera.x << " y " << vCamera.y;
     }
     if(m_keys[KEYBOARD::KEY_S]->m_held)
     {
@@ -332,7 +316,6 @@ void Scene::handlePlayerInput()
         fYaw += 2.0f * fElapsedTime;
     }
 
-   // qDebug() << "Camera x " << vCamera.x << " y " << vCamera.y;
 }
 
 void Scene::resetStatus()
