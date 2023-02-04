@@ -68,7 +68,7 @@ void Scene::OnUserCreated()
 //        { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f },
 
 //    };
-    meshCube.LoadFromObjectFile(":/res/VideoShip.obj");
+    meshCube.LoadFromObjectFile(":/res/videoship.obj");
     // Projection Matrix
     float fNear = 0.1f;
     float fFar = 1000.0f;
@@ -162,7 +162,7 @@ void Scene::OnUserUpdated()
 
             // How similar is normal to light direction
             float dp = normal.x * light_direction.x + normal.y * light_direction.y + normal.z * light_direction.z;
-            qDebug() << "dp " << dp;
+            //qDebug() << "dp " << dp;
             // Set color
             triTranslated.color = GetColour(dp);
 

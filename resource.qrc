@@ -1,5 +1,8 @@
 <RCC>
     <qresource prefix="/">
-        <file>res/VideoShip.obj</file>
+        <file>res/videoship.obj</file>
+        <file>res/teapot.obj</file>
+        <file>res/mountains.obj</file>
+        <file>res/axis.obj</file>
     </qresource>
 </RCC>
