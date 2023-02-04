@@ -122,7 +122,7 @@ struct Matrix
 
     }
 
-    static inline Mat4x4 Matrix_QuickInverse(Mat4x4 &m) // Only for Rotation/Translation Matrices
+    static inline Mat4x4 QuickInverse(Mat4x4 &m) // Only for Rotation/Translation Matrices
     {
         Mat4x4 matrix;
         matrix.m[0][0] = m.m[0][0]; matrix.m[0][1] = m.m[1][0]; matrix.m[0][2] = m.m[2][0]; matrix.m[0][3] = 0.0f;

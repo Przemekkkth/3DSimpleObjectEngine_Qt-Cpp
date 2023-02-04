@@ -77,106 +77,128 @@ void Scene::OnUserCreated()
 
 void Scene::OnUserUpdated()
 {
-    // Clear Screen
-    clear();
-
-    // Set up rotation matrices
+    // Set up "World Tranmsform" though not updating theta
+    // makes this a bit redundant
     Mat4x4 matRotZ, matRotX;
-    fTheta += 0.01f;
+    //fTheta += 1.0f * fElapsedTime; // Uncomment to spin me right round baby right round
+    matRotZ = Matrix::MakeRotationZ(fTheta * 0.5f);
+    matRotX = Matrix::MakeRotationX(fTheta);
 
-    // Rotation Z
-    matRotZ.m[0][0] = cosf(fTheta);
-    matRotZ.m[0][1] = sinf(fTheta);
-    matRotZ.m[1][0] = -sinf(fTheta);
-    matRotZ.m[1][1] = cosf(fTheta);
-    matRotZ.m[2][2] = 1;
-    matRotZ.m[3][3] = 1;
+    Mat4x4 matTrans;
+    matTrans = Matrix::MakeTranslation(0.0f, 0.0f, 5.0f);
 
-    // Rotation X
-    matRotX.m[0][0] = 1;
-    matRotX.m[1][1] = cosf(fTheta * 0.5f);
-    matRotX.m[1][2] = sinf(fTheta * 0.5f);
-    matRotX.m[2][1] = -sinf(fTheta * 0.5f);
-    matRotX.m[2][2] = cosf(fTheta * 0.5f);
-    matRotX.m[3][3] = 1;
+    Mat4x4 matWorld;
+    matWorld = Matrix::MakeIdentity();	// Form World Matrix
+    matWorld = Matrix::MultiplyMatrix(matRotZ, matRotX); // Transform by rotation
+    matWorld = Matrix::MultiplyMatrix(matWorld, matTrans); // Transform by translation
 
+    // Create "Point At" Matrix for camera
+    Vec3d vUp = { 0,1,0 };
+    Vec3d vTarget = { 0,0,1 };
+    Mat4x4 matCameraRot = Matrix::MakeRotationY(fYaw);
+    vLookDir = Matrix::MultiplyVector(matCameraRot, vTarget);
+    vTarget = Vector::Add(vCamera, vLookDir);
+    Mat4x4 matCamera = Matrix::PointAt(vCamera, vTarget, vUp);
+
+    // Make view matrix from camera
+    Mat4x4 matView = Matrix::QuickInverse(matCamera);
     // Store triagles for rastering later
     QVector<Triangle> vecTrianglesToRaster;
 
+    // Clear Screen
+    clear();
     // Draw Triangles
     for (auto tri : meshCube.tris)
     {
-        Triangle triProjected, triTranslated, triRotatedZ, triRotatedZX;
+        Triangle triProjected, triTransformed, triViewed;
+        // World Matrix Transform
+        triTransformed.p[0] = Matrix::MultiplyVector(matWorld, tri.p[0]);
+        triTransformed.p[1] = Matrix::MultiplyVector(matWorld, tri.p[1]);
+        triTransformed.p[2] = Matrix::MultiplyVector(matWorld, tri.p[2]);
 
-        // Rotate in Z-Axis
-        MultiplyMatrixVector(tri.p[0], triRotatedZ.p[0], matRotZ);
-        MultiplyMatrixVector(tri.p[1], triRotatedZ.p[1], matRotZ);
-        MultiplyMatrixVector(tri.p[2], triRotatedZ.p[2], matRotZ);
-
-        // Rotate in X-Axis
-        MultiplyMatrixVector(triRotatedZ.p[0], triRotatedZX.p[0], matRotX);
-        MultiplyMatrixVector(triRotatedZ.p[1], triRotatedZX.p[1], matRotX);
-        MultiplyMatrixVector(triRotatedZ.p[2], triRotatedZX.p[2], matRotX);
-
-        // Offset into the screen
-        triTranslated = triRotatedZX;
-        triTranslated.p[0].z = triRotatedZX.p[0].z + 8.0f;
-        triTranslated.p[1].z = triRotatedZX.p[1].z + 8.0f;
-        triTranslated.p[2].z = triRotatedZX.p[2].z + 8.0f;
-
-        // Use Cross-Product to get surface normal
+        // Calculate triangle Normal
         Vec3d normal, line1, line2;
-        line1.x = triTranslated.p[1].x - triTranslated.p[0].x;
-        line1.y = triTranslated.p[1].y - triTranslated.p[0].y;
-        line1.z = triTranslated.p[1].z - triTranslated.p[0].z;
 
-        line2.x = triTranslated.p[2].x - triTranslated.p[0].x;
-        line2.y = triTranslated.p[2].y - triTranslated.p[0].y;
-        line2.z = triTranslated.p[2].z - triTranslated.p[0].z;
+        // Get lines either side of triangle
+        line1 = Vector::Sub(triTransformed.p[1], triTransformed.p[0]);
+        line2 = Vector::Sub(triTransformed.p[2], triTransformed.p[0]);
 
-        normal.x = line1.y * line2.z - line1.z * line2.y;
-        normal.y = line1.z * line2.x - line1.x * line2.z;
-        normal.z = line1.x * line2.y - line1.y * line2.x;
+        // Take cross product of lines to get normal to triangle surface
+        normal = Vector::CrossProduct(line1, line2);
 
-        // It's normally normal to normalise the normal
-        float l = sqrtf(normal.x*normal.x + normal.y*normal.y + normal.z*normal.z);
-        normal.x /= l; normal.y /= l; normal.z /= l;
+        // You normally need to normalise a normal!
+        normal = Vector::Normalise(normal);
 
-        if(normal.x * (triTranslated.p[0].x - vCamera.x) +
-                normal.y * (triTranslated.p[0].y - vCamera.y) +
-                normal.z * (triTranslated.p[0].z - vCamera.z) < 0.0f)
+        // Get Ray from triangle to camera
+        Vec3d vCameraRay = Vector::Sub(triTransformed.p[0], vCamera);
+
+        // If ray is aligned with normal, then triangle is visible
+        if (Vector::DotProduct(normal, vCameraRay) < 0.0f)
         {
             // Illumination
-            Vec3d light_direction = { 0.0f, 0.0f, -1.0f };
-            float l = sqrtf(light_direction.x*light_direction.x + light_direction.y*light_direction.y + light_direction.z*light_direction.z);
-            light_direction.x /= l; light_direction.y /= l; light_direction.z /= l;
+            Vec3d light_direction = { 0.0f, 1.0f, -1.0f };
+            light_direction = Vector::Normalise(light_direction);
 
-            // How similar is normal to light direction
-            float dp = normal.x * light_direction.x + normal.y * light_direction.y + normal.z * light_direction.z;
-            //qDebug() << "dp " << dp;
+            // How "aligned" are light direction and triangle surface normal?
+            float dp = std::max(0.1f, Vector::DotProduct(light_direction, normal));
             // Set color
-            triTranslated.color = GetColour(dp);
+            triTransformed.color = GetColour(dp);
 
-            // Project triangles from 3D --> 2D
-            MultiplyMatrixVector(triTranslated.p[0], triProjected.p[0], matProj);
-            MultiplyMatrixVector(triTranslated.p[1], triProjected.p[1], matProj);
-            MultiplyMatrixVector(triTranslated.p[2], triProjected.p[2], matProj);
+            // Convert World Space --> View Space
+            triViewed.p[0] = Matrix::MultiplyVector(matView, triTransformed.p[0]);
+            triViewed.p[1] = Matrix::MultiplyVector(matView, triTransformed.p[1]);
+            triViewed.p[2] = Matrix::MultiplyVector(matView, triTransformed.p[2]);
+            triViewed.color = GetColour(dp);
+            qDebug() << "dp " << dp;
 
-            // Scale into view
-            triProjected.p[0].x += 1.0f; triProjected.p[0].y += 1.0f;
-            triProjected.p[1].x += 1.0f; triProjected.p[1].y += 1.0f;
-            triProjected.p[2].x += 1.0f; triProjected.p[2].y += 1.0f;
-            triProjected.p[0].x *= 0.5f * (float)SCREEN_SIZE.width();
-            triProjected.p[0].y *= 0.5f * (float)SCREEN_SIZE.height();
-            triProjected.p[1].x *= 0.5f * (float)SCREEN_SIZE.width();
-            triProjected.p[1].y *= 0.5f * (float)SCREEN_SIZE.height();
-            triProjected.p[2].x *= 0.5f * (float)SCREEN_SIZE.width();
-            triProjected.p[2].y *= 0.5f * (float)SCREEN_SIZE.height();
+            // Clip Viewed Triangle against near plane, this could form two additional
+            // additional triangles.
+            int nClippedTriangles = 0;
+            Triangle clipped[2];
+            nClippedTriangles = Triangle::ClipAgainstPlane({ 0.0f, 0.0f, 0.1f }, { 0.0f, 0.0f, 1.0f }, triViewed, clipped[0], clipped[1]);
 
-            // Set color
-            triProjected.color = GetColour(dp);
-            // Store triangle for sorting
-            vecTrianglesToRaster.push_back(triProjected);
+            // We may end up with multiple triangles form the clip, so project as
+            // required
+            for (int n = 0; n < nClippedTriangles; n++)
+            {
+                // Project triangles from 3D --> 2D
+                triProjected.p[0] = Matrix::MultiplyVector(matProj, clipped[n].p[0]);
+                triProjected.p[1] = Matrix::MultiplyVector(matProj, clipped[n].p[1]);
+                triProjected.p[2] = Matrix::MultiplyVector(matProj, clipped[n].p[2]);
+                triProjected.color = clipped[n].color;
+
+
+                // Scale into view, we moved the normalising into cartesian space
+                // out of the matrix.vector function from the previous videos, so
+                // do this manually
+                triProjected.p[0] = Vector::Div(triProjected.p[0], triProjected.p[0].w);
+                triProjected.p[1] = Vector::Div(triProjected.p[1], triProjected.p[1].w);
+                triProjected.p[2] = Vector::Div(triProjected.p[2], triProjected.p[2].w);
+
+                // X/Y are inverted so put them back
+                triProjected.p[0].x *= -1.0f;
+                triProjected.p[1].x *= -1.0f;
+                triProjected.p[2].x *= -1.0f;
+                triProjected.p[0].y *= -1.0f;
+                triProjected.p[1].y *= -1.0f;
+                triProjected.p[2].y *= -1.0f;
+
+                // Offset verts into visible normalised space
+                Vec3d vOffsetView = { 1,1,0 };
+                triProjected.p[0] = Vector::Add(triProjected.p[0], vOffsetView);
+                triProjected.p[1] = Vector::Add(triProjected.p[1], vOffsetView);
+                triProjected.p[2] = Vector::Add(triProjected.p[2], vOffsetView);
+                triProjected.p[0].x *= 0.5f * (float)SCREEN_SIZE.width();
+                triProjected.p[0].y *= 0.5f * (float)SCREEN_SIZE.height();
+                triProjected.p[1].x *= 0.5f * (float)SCREEN_SIZE.width();
+                triProjected.p[1].y *= 0.5f * (float)SCREEN_SIZE.height();
+                triProjected.p[2].x *= 0.5f * (float)SCREEN_SIZE.width();
+                triProjected.p[2].y *= 0.5f * (float)SCREEN_SIZE.height();
+
+                // Store triangle for sorting
+                vecTrianglesToRaster.push_back(triProjected);
+            }
+
         }
 
 
@@ -227,6 +249,7 @@ QRgb Scene::GetColour(float lum)
     {
         pixel_bw *= -1;
     }
+
     QRgb retVal;
     switch (pixel_bw)
     {
@@ -251,6 +274,11 @@ QRgb Scene::GetColour(float lum)
         retVal = qRgb(217, 0, 0);
     }
         break;
+    case 4:
+    {
+        retVal = qRgb(237, 0, 0);
+    }
+        break;
     default:
     {
         retVal = qRgb(0, 0, 0);
@@ -263,20 +291,22 @@ QRgb Scene::GetColour(float lum)
 
 void Scene::handlePlayerInput()
 {
-    float fElapsedTime = m_loopTime;
-    if(m_keys[KEYBOARD::KEY_UP]->m_held)
+    float fElapsedTime = 1.0/m_loopTime;
+
+    if(m_keys[KEYBOARD::KEY_I]->m_held)
     {
         vCamera.y += 8.0f * fElapsedTime;
+        //qDebug() << "vCamera.y " << vCamera.y ;
     }
-    if(m_keys[KEYBOARD::KEY_DOWN]->m_held)
+    if(m_keys[KEYBOARD::KEY_K]->m_held)
     {
         vCamera.y -= 8.0f * fElapsedTime;
     }
-    if(m_keys[KEYBOARD::KEY_LEFT]->m_held)
+    if(m_keys[KEYBOARD::KEY_J]->m_held)
     {
         vCamera.x -= 8.0f * fElapsedTime;
     }
-    if(m_keys[KEYBOARD::KEY_RIGHT]->m_held)
+    if(m_keys[KEYBOARD::KEY_L]->m_held)
     {
         vCamera.x += 8.0f * fElapsedTime;
     }
@@ -287,6 +317,7 @@ void Scene::handlePlayerInput()
     if(m_keys[KEYBOARD::KEY_W]->m_held)
     {
         vCamera = Vector::Add(vCamera, vForward);
+        qDebug() << "W vCamera.x " << vCamera.x << " y " << vCamera.y;
     }
     if(m_keys[KEYBOARD::KEY_S]->m_held)
     {
@@ -300,6 +331,8 @@ void Scene::handlePlayerInput()
     {
         fYaw += 2.0f * fElapsedTime;
     }
+
+   // qDebug() << "Camera x " << vCamera.x << " y " << vCamera.y;
 }
 
 void Scene::resetStatus()
