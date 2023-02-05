@@ -1,5 +1,7 @@
 #include "scene.h"
 #include "utils/matrix.h"
+#include <QDir>
+#include <QPainter>
 #include <QDebug>
 #include <QPainterPath>
 #include <QGraphicsPathItem>
@@ -326,7 +328,11 @@ void Scene::handlePlayerInput()
     {
         fYaw += 2.0f * fElapsedTime;
     }
-
+    //renderScene to file
+    if(m_keys[KEYBOARD::KEY_Z]->m_released)
+    {
+        renderGameScene();
+    }
 }
 
 void Scene::resetStatus()
@@ -336,6 +342,19 @@ void Scene::resetStatus()
         m_keys[i]->m_released = false;
     }
     m_mouse->m_released = false;
+}
+
+void Scene::renderGameScene()
+{
+    static int index = 0;
+    QString fileName = QDir::currentPath() + QDir::separator() + "screen" + QString::number(index++) + ".png";
+    QRect rect = sceneRect().toAlignedRect();
+    QImage image(rect.size(), QImage::Format_ARGB32);
+    image.fill(Qt::transparent);
+    QPainter painter(&image);
+    render(&painter);
+    image.save(fileName);
+    qDebug() << "saved " << fileName;
 }
 
 void Scene::keyPressEvent(QKeyEvent *event)

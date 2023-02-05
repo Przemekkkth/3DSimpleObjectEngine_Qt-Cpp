@@ -53,6 +53,7 @@ private:
 
     void handlePlayerInput();
     void resetStatus();
+    void renderGameScene();
     KeyStatus* m_keys[256];
     MouseStatus* m_mouse;
 
